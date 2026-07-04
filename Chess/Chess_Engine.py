@@ -15,6 +15,9 @@ class GameState():
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN","wR"]
         ]
 
+        self.move_functions = {'p': self.get_pawn_moves, 'R': self.get_rook_moves, 'N': self.get_knight_moves, 
+                          'B': self.get_bishop_moves, 'Q': self.get_queen_moves, 'K': self.get_king_moves}  # maps piece types to their move functions
+
         self.whiteToMove = True
         self.moveLog = []
 
@@ -54,11 +57,7 @@ class GameState():
                 turn = self.board[r][c][0]  # get the color of the piece at the square
                 if (turn == "w" and self.whiteToMove) or (turn == "b" and not self.whiteToMove):  # check if it's the player's turn
                     piece = self.board[r][c][1]  # get the type of piece at the square
-                    if piece == "p":  # pawn
-                        self.get_pawn_moves(r, c, moves)
-                    elif piece == "R":  # rook
-                        self.get_rook_moves(r, c, moves)
-                    self.move_functions[piece](self, r, c, moves)  # call the appropriate move function based on the piece type
+                    self.move_functions[piece](r, c, moves)  # call the appropriate move function based on the piece type
         return moves
     
 
@@ -66,7 +65,29 @@ class GameState():
     Get all the pawn moves for the pawn located at row, col and add these moves to the list
     '''
     def get_pawn_moves(self, r, c, moves):
-        pass
+        if self.whiteToMove:  # white pawn moves
+            if self.board[r - 1][c] == "--":  # 1 square move
+                moves.append(Move((r, c), (r - 1, c), self.board))
+                if r == 6 and self.board[r - 2][c] == "--":  # 2 square move
+                    moves.append(Move((r, c), (r - 2, c), self.board))
+            if c - 1 >= 0:  # capture to the left
+                if self.board[r - 1][c - 1][0] == "b":  # enemy piece to capture
+                    moves.append(Move((r, c), (r - 1, c - 1), self.board))
+            if c + 1 <= 7:  # capture to the right
+                if self.board[r - 1][c + 1][0] == "b":  # enemy piece to capture
+                    moves.append(Move((r, c), (r - 1, c + 1), self.board))
+
+        if not self.whiteToMove:  # black pawn moves
+            if self.board[r + 1][c] == "--":  # 1 square move
+                moves.append(Move((r, c), (r + 1, c), self.board))
+                if r == 1 and self.board[r + 2][c] == "--":  # 2 square move
+                    moves.append(Move((r, c), (r + 2, c), self.board))
+            if c - 1 >= 0:  # capture to the left
+                if self.board[r + 1][c - 1][0] == "w":  # enemy piece to capture
+                    moves.append(Move((r, c), (r + 1, c - 1), self.board))
+            if c + 1 <= 7:  # capture to the right
+                if self.board[r + 1][c + 1][0] == "w":  # enemy piece to capture
+                    moves.append(Move((r, c), (r + 1, c + 1), self.board))
 
     '''
     Get all the rook moves for the rook located at row, col and add these moves to the list
@@ -74,8 +95,32 @@ class GameState():
     def get_rook_moves(self, r, c, moves):
         pass
 
-    
+    '''
+    Get all the knight moves for the knight located at row, col and add these moves to the list
+    '''
+    def get_knight_moves(self, r, c, moves):
+        pass
 
+    '''
+    Get all the bishop moves for the bishop located at row, col and add these moves to the list
+    '''
+    def get_bishop_moves(self, r, c, moves):
+        pass
+
+    '''
+    Get all the queen moves for the queen located at row, col and add these moves to the list
+    '''
+    def get_queen_moves(self, r, c, moves):
+        pass
+
+    '''
+    Get all the king moves for the king located at row, col and add these moves to the list
+    '''
+    def get_king_moves(self, r, c, moves):
+        pass
+
+
+    
 
 
 
