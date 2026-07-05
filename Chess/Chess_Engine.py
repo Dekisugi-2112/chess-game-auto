@@ -237,7 +237,7 @@ class GameState():
             end_row = r + m[0]
             end_col = c + m[1]
             if 0 <= end_row < 8 and 0 <= end_col < 8:
-                if not piece_pinned:  # knight can move regardless of pin direction
+                if not piece_pinned or pin_direction == m or pin_direction == (-m[0], -m[1]):  # check if the piece is pinned and if the move is in the direction of the pin
                     end_piece = self.board[end_row][end_col]
                     if end_piece[0] != ally_color:  # not a friendly piece (empty or enemy)
                         moves.append(Move((r, c), (end_row, end_col), self.board))
@@ -245,6 +245,14 @@ class GameState():
     Get all the bishop moves for the bishop located at row, col and add these moves to the list
     '''
     def get_bishop_moves(self, r, c, moves):
+        piece_pinned = False
+        pin_direction = ()
+        for i in range(len(self.pins) - 1, -1, -1):  # iterate through the list of pins backwards
+            if self.pins[i][0] == r and self.pins[i][1] == c:  # square is pinned
+                piece_pinned = True
+                pin_direction = (self.pins[i][2], self.pins[i][3])  # save the direction of the pin
+                self.pins.remove(self.pins[i])  # remove the pin from the list to avoid double counting
+                break
         directions = ((-1, -1), (-1, 1), (1, -1), (1, 1))  # 4 diagonals
         enemy_color = "b" if self.whiteToMove else "w"
         for d in directions:
@@ -252,12 +260,13 @@ class GameState():
                 end_row = r + d[0] * i
                 end_col = c + d[1] * i
                 if 0 <= end_row < 8 and 0 <= end_col < 8:
-                    end_piece = self.board[end_row][end_col]
-                    if end_piece == "--":
-                        moves.append(Move((r, c), (end_row, end_col), self.board))
-                    elif end_piece[0] == enemy_color:
-                        moves.append(Move((r, c), (end_row, end_col), self.board))
-                        break
+                    if not piece_pinned or pin_direction == d or pin_direction == (-d[0], -d[1]):  # check if the piece is pinned and if the move is in the direction of the pin
+                        end_piece = self.board[end_row][end_col]
+                        if end_piece == "--":
+                            moves.append(Move((r, c), (end_row, end_col), self.board))
+                        elif end_piece[0] == enemy_color:
+                            moves.append(Move((r, c), (end_row, end_col), self.board))
+                            break
                     else:
                         break
                 else:
@@ -274,17 +283,29 @@ class GameState():
     Get all the king moves for the king located at row, col and add these moves to the list
     '''
     def get_king_moves(self, r, c, moves):
-        king_moves = ((-1, -1), (-1, 0), (-1, 1),
-                    (0, -1),           (0, 1),
-                    (1, -1),  (1, 0),  (1, 1))
+        row_moves = (-1, -1, -1, 0, 0, 1, 1, 1)
+        col_moves = (-1, 0, 1, -1, 1, -1, 0, 1)
         ally_color = "w" if self.whiteToMove else "b"
-        for m in king_moves:
-            end_row = r + m[0]
-            end_col = c + m[1]
+        for i in range(8):
+            end_row = r + row_moves[i]
+            end_col = c + col_moves[i]
             if 0 <= end_row < 8 and 0 <= end_col < 8:
                 end_piece = self.board[end_row][end_col]
                 if end_piece[0] != ally_color:
-                    moves.append(Move((r, c), (end_row, end_col), self.board))
+                    # place king on end square and check for checks
+                    if ally_color == 'w':
+                        self.whiteKingLocation = (end_row, end_col)
+                    else:
+                        self.blackKingLocation = (end_row, end_col)
+                    in_check, pins, checks = self.check_for_pins_and_checks()
+                    if not in_check:
+                        moves.append(Move((r, c), (end_row, end_col), self.board))
+                    # place king back on original location
+                    if ally_color == 'w':
+                        self.whiteKingLocation = (r, c)
+                    else:
+                        self.blackKingLocation = (r, c)
+                    
 
     def check_for_pins_and_checks(self):
         pins = []  # squares where the allied pinned piece is and direction pinned from
